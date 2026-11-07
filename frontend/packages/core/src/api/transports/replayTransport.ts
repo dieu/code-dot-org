@@ -17,8 +17,11 @@ export function createReplayTransport(opts: {
   const {mode, namespace = 'default', backingTransport} = opts;
 
   return {
-    async requestWithMeta<T>(req: RequestOptions): Promise<ApiResponse<T>> {
-      const key = `${namespace}:${toReplayKey(req)}`;
+    async requestWithMeta<T>(
+      req: RequestOptions,
+      blob?: boolean,
+    ): Promise<ApiResponse<T>> {
+      const key = `${namespace}:${toReplayKey(req)}${blob ? ':blob' : ''}`;
 
       if (mode !== 'record') {
         const existing = await idbGet<Recording>(key);
@@ -28,7 +31,7 @@ export function createReplayTransport(opts: {
       }
 
       // record (or auto miss)
-      const resp = await backingTransport.requestWithMeta<T>(req);
+      const resp = await backingTransport.requestWithMeta<T>(req, blob);
       await idbPut<Recording>(key, {
         key,
         createdAt: Date.now(),
